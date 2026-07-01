@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate && esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --external:@hono/node-server --external:@prisma/client --external:@supabase/supabase-js --external:@anthropic-ai/sdk --external:hono --external:dotenv --external:zod",
+    "build": "prisma generate && esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --external:@hono/node-server --external:@prisma/client --external:@supabase/supabase-js --external:@anthropic-ai/sdk --external:hono --external:dotenv --external:web-push --external:zod",
     "start": "prisma migrate deploy && node dist/index.js",
     "lint": "tsc --noEmit",
     "db:generate": "prisma generate",
@@ -20,6 +20,7 @@
     "@anthropic-ai/sdk": "^0.32.0",
     "hono": "^4.6.0",
     "dotenv": "^16.4.0",
+    "web-push": "^3.6.7",
     "zod": "^3.24.0"
   },
   "devDependencies": {
@@ -27,6 +28,7 @@
     "prisma": "^6.1.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
-    "@types/node": "^22.10.0"
+    "@types/node": "^22.10.0",
+    "@types/web-push": "^3.6.4"
   }
 }

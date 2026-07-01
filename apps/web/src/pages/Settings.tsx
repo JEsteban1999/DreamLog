@@ -4,6 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { notificationSettingsSchema, type NotificationSettings, type UserProfile } from "@dreamlog/shared";
 import { apiClient } from "../lib/api-client";
+import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "../lib/push";
 
 const profileFormSchema = z.object({
   name: z.string().max(100).optional(),
@@ -206,12 +207,92 @@ function NotificationsForm() {
   );
 }
 
+function PushToggle() {
+  const [status, setStatus] = useState<"checking" | "subscribed" | "unsubscribed" | "unsupported">("checking");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!isPushSupported()) {
+      setStatus("unsupported");
+      return;
+    }
+    getExistingSubscription().then((sub) => setStatus(sub ? "subscribed" : "unsubscribed"));
+  }, []);
+
+  async function handleEnable() {
+    setBusy(true);
+    setError(null);
+    try {
+      await subscribeToPush();
+      setStatus("subscribed");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDisable() {
+    setBusy(true);
+    setError(null);
+    try {
+      await unsubscribeFromPush();
+      setStatus("unsubscribed");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="mt-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+      <h3 className="mb-2 font-semibold">Notificaciones push en este dispositivo</h3>
+      <p className="mb-3 text-sm text-slate-500">
+        Los horarios de arriba solo se disparan si activas las notificaciones push en este navegador.
+      </p>
+
+      {status === "unsupported" && (
+        <p className="text-sm text-red-500">Este navegador no soporta notificaciones push.</p>
+      )}
+      {status === "checking" && <p className="text-sm text-slate-500">Verificando...</p>}
+      {status === "subscribed" && (
+        <div className="flex items-center gap-3">
+          <span className="text-sm text-green-600">✓ Activas en este dispositivo</span>
+          <button
+            type="button"
+            onClick={handleDisable}
+            disabled={busy}
+            className="text-sm text-red-500 hover:underline disabled:opacity-50"
+          >
+            Desactivar
+          </button>
+        </div>
+      )}
+      {status === "unsubscribed" && (
+        <button
+          type="button"
+          onClick={handleEnable}
+          disabled={busy}
+          className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+        >
+          {busy ? "Activando..." : "Activar notificaciones"}
+        </button>
+      )}
+
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+    </div>
+  );
+}
+
 export function Settings() {
   return (
     <div className="mx-auto max-w-lg">
       <h2 className="mb-4 text-2xl font-semibold">Ajustes</h2>
       <ProfileForm />
       <NotificationsForm />
+      <PushToggle />
     </div>
   );
 }

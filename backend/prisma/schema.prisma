@@ -16,9 +16,10 @@ model User {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
 
-  preferences   NotificationSettings?
-  sleep_entries SleepEntry[]
-  ai_reports    AIReport[]
+  preferences        NotificationSettings?
+  sleep_entries      SleepEntry[]
+  ai_reports         AIReport[]
+  push_subscriptions PushSubscription[]
 }
 
 model SleepEntry {
@@ -88,16 +89,33 @@ model AIReport {
 }
 
 model NotificationSettings {
-  id                   String  @id @default(cuid())
-  user_id              String  @unique
-  bedtime_reminder     Boolean @default(true)
-  bedtime_time         String  @default("22:00")
-  wakeup_reminder      Boolean @default(true)
-  wakeup_time          String  @default("07:30")
-  weekly_report        Boolean @default(true)
-  sleep_debt_alert     Boolean @default(true)
-  sleep_debt_threshold Float   @default(5.0)
-  streak_reminder      Boolean @default(true)
+  id                   String    @id @default(cuid())
+  user_id              String    @unique
+  bedtime_reminder     Boolean   @default(true)
+  bedtime_time         String    @default("22:00")
+  wakeup_reminder      Boolean   @default(true)
+  wakeup_time          String    @default("07:30")
+  weekly_report        Boolean   @default(true)
+  sleep_debt_alert     Boolean   @default(true)
+  sleep_debt_threshold Float     @default(5.0)
+  streak_reminder      Boolean   @default(true)
+
+  // Evita reenviar el mismo recordatorio dos veces el mismo día local del usuario
+  last_bedtime_sent_date String?
+  last_wakeup_sent_date  String?
 
   user User @relation(fields: [user_id], references: [id])
+}
+
+model PushSubscription {
+  id         String   @id @default(cuid())
+  user_id    String
+  endpoint   String   @unique
+  p256dh     String
+  auth       String
+  created_at DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
 }

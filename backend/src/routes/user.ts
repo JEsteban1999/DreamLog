@@ -1,7 +1,16 @@
 import { Hono } from "hono";
+import { z } from "zod";
 import { notificationSettingsSchema } from "@dreamlog/shared";
 import { requireAuth } from "../middleware/auth.js";
 import { prisma } from "../lib/prisma.js";
+
+const pushSubscriptionSchema = z.object({
+  endpoint: z.string().url(),
+  keys: z.object({
+    p256dh: z.string(),
+    auth: z.string(),
+  }),
+});
 
 type Variables = { userId: string };
 
@@ -49,4 +58,33 @@ userRoutes.patch("/notifications", async (c) => {
     update: parsed.data,
   });
   return c.json(settings);
+});
+
+userRoutes.post("/push-subscription", async (c) => {
+  const userId = c.get("userId");
+  const body = await c.req.json();
+  const parsed = pushSubscriptionSchema.safeParse(body);
+  if (!parsed.success) {
+    return c.json({ error: parsed.error.flatten() }, 400);
+  }
+
+  await prisma.pushSubscription.upsert({
+    where: { endpoint: parsed.data.endpoint },
+    create: {
+      user_id: userId,
+      endpoint: parsed.data.endpoint,
+      p256dh: parsed.data.keys.p256dh,
+      auth: parsed.data.keys.auth,
+    },
+    update: { user_id: userId, p256dh: parsed.data.keys.p256dh, auth: parsed.data.keys.auth },
+  });
+
+  return c.body(null, 204);
+});
+
+userRoutes.delete("/push-subscription", async (c) => {
+  const userId = c.get("userId");
+  const { endpoint } = await c.req.json();
+  await prisma.pushSubscription.deleteMany({ where: { endpoint, user_id: userId } });
+  return c.body(null, 204);
 });

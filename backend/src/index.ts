@@ -6,6 +6,7 @@ import { authRoutes } from "./routes/auth.js";
 import { sleepRoutes } from "./routes/sleep.js";
 import { aiRoutes } from "./routes/ai.js";
 import { userRoutes } from "./routes/user.js";
+import { internalRoutes } from "./routes/internal.js";
 
 const app = new Hono();
 
@@ -17,6 +18,7 @@ app.route("/auth", authRoutes);
 app.route("/sleep", sleepRoutes);
 app.route("/ai", aiRoutes);
 app.route("/user", userRoutes);
+app.route("/internal", internalRoutes);
 
 const port = Number(process.env.PORT ?? 3000);
 
