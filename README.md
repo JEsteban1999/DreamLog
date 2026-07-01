@@ -4,11 +4,17 @@ Diario de sueño inteligente. La visión completa del producto está en [README_
 
 **Fase actual:** Fase 1 (MVP core, web-only). Mobile (React Native + Expo) se evalúa para una fase posterior.
 
+## Producción
+
+- **Web:** https://dream-log-web.vercel.app (Vercel)
+- **Backend:** https://dreamlog-backend.onrender.com (Render, free tier — puede tardar ~30-60s en despertar tras inactividad)
+- **DB/Auth:** Supabase (Postgres + Auth)
+
 ## Stack
 
 - **Monorepo:** pnpm workspaces + Turborepo
 - **Web:** React 19 + Vite + Tailwind CSS v4 + React Router + Zustand
-- **Backend:** Hono.js + Prisma + PostgreSQL
+- **Backend:** Hono.js + Prisma + PostgreSQL, build empaquetado con esbuild
 - **IA:** Anthropic SDK (Claude)
 - **Auth/DB prod:** Supabase
 
@@ -45,11 +51,14 @@ pnpm dev
 ## Variables de entorno
 
 - `backend/.env.example` — DB, Supabase, Anthropic API key
-- `apps/web/.env.local.example` — Supabase (cliente)
+- `apps/web/.env.local.example` — Supabase (cliente) + `VITE_API_URL` (solo producción)
+
+## Despliegue
+
+- **Backend (Render):** Root en la raíz del repo (monorepo). Build: `pnpm install --frozen-lockfile && pnpm --filter backend build`. Start: `pnpm --filter backend start` (corre `prisma migrate deploy` antes de levantar el server). `DATABASE_URL` usa el **Session Pooler** de Supabase (puerto 5432), no la conexión directa ni el Transaction Pooler.
+- **Frontend (Vercel):** Root Directory `apps/web`, detecta Vite automáticamente.
+- El build del backend usa `esbuild` para empaquetar `@dreamlog/shared` junto con el código — Node en producción no puede resolver los imports internos del paquete workspace sin esto.
 
 ## Pendiente para completar la Fase 1
 
-- Conectar Supabase Auth real en el frontend (login/logout) y wiring del `apiClient` con el token de sesión
-- Formularios de registro nocturno/matutino (React Hook Form + Zod, usando los esquemas de `@dreamlog/shared`)
-- Gráficas del dashboard con Recharts
 - Notificaciones push (Web Push + Service Worker)
