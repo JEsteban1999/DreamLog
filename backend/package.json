@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "prisma generate && tsc -p tsconfig.json",
+    "build": "prisma generate && esbuild src/index.ts --bundle --platform=node --format=esm --outfile=dist/index.js --external:@hono/node-server --external:@prisma/client --external:@supabase/supabase-js --external:@anthropic-ai/sdk --external:hono --external:dotenv --external:zod",
     "start": "prisma migrate deploy && node dist/index.js",
     "lint": "tsc --noEmit",
     "db:generate": "prisma generate",
@@ -23,6 +23,7 @@
     "zod": "^3.24.0"
   },
   "devDependencies": {
+    "esbuild": "^0.24.0",
     "prisma": "^6.1.0",
     "tsx": "^4.19.0",
     "typescript": "^5.7.0",
