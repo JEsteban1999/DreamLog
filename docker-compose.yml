@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: dreamlog-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: dreamlog
+      POSTGRES_PASSWORD: dreamlog
+      POSTGRES_DB: dreamlog
+    ports:
+      - "5432:5432"
+    volumes:
+      - dreamlog_postgres_data:/var/lib/postgresql/data
+
+volumes:
+  dreamlog_postgres_data:

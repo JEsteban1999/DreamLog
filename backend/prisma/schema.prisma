@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         String   @id @default(cuid())
+  email      String   @unique
+  name       String?
+  timezone   String   @default("America/Bogota")
+  goal_hours Float    @default(8.0)
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  preferences   NotificationSettings?
+  sleep_entries SleepEntry[]
+  ai_reports    AIReport[]
+}
+
+model SleepEntry {
+  id          String    @id @default(cuid())
+  user_id     String
+  sleep_date  DateTime
+
+  // === Registro nocturno ===
+  sleep_time          DateTime?
+  notes_before        String?
+  caffeine_cups       Int       @default(0)
+  caffeine_last_hour  DateTime?
+  exercise            Boolean   @default(false)
+  exercise_type       String?
+  exercise_hour       DateTime?
+  screen_time_hours   Float     @default(0)
+  screen_before_sleep Boolean   @default(false)
+  stress_level        Int?
+  stress_source       String?
+  alcohol             Boolean   @default(false)
+  alcohol_drinks      Int       @default(0)
+  heavy_meal          Boolean   @default(false)
+  nap_today           Boolean   @default(false)
+  nap_duration_min    Int       @default(0)
+
+  // === Registro matutino ===
+  wake_time     DateTime?
+  sleep_quality Int?
+  mood_on_wake  String?
+  energy_level  Int?
+  dream_had     Boolean   @default(false)
+  dream_notes   String?
+  dream_type    String?
+  awakenings    Int       @default(0)
+  notes_morning String?
+
+  // === Métricas calculadas ===
+  duration_hours   Float?
+  sleep_efficiency Float?
+
+  // === IA ===
+  ai_prediction Json?
+
+  // === Metadata ===
+  is_complete Boolean   @default(false)
+  deleted_at  DateTime?
+  created_at  DateTime  @default(now())
+  updated_at  DateTime  @updatedAt
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, sleep_date])
+}
+
+model AIReport {
+  id          String   @id @default(cuid())
+  user_id     String
+  type        String // weekly | monthly
+  period_from DateTime
+  period_to   DateTime
+  content     Json
+  created_at  DateTime @default(now())
+
+  user User @relation(fields: [user_id], references: [id])
+
+  @@index([user_id, type, period_from])
+}
+
+model NotificationSettings {
+  id                   String  @id @default(cuid())
+  user_id              String  @unique
+  bedtime_reminder     Boolean @default(true)
+  bedtime_time         String  @default("22:00")
+  wakeup_reminder      Boolean @default(true)
+  wakeup_time          String  @default("07:30")
+  weekly_report        Boolean @default(true)
+  sleep_debt_alert     Boolean @default(true)
+  sleep_debt_threshold Float   @default(5.0)
+  streak_reminder      Boolean @default(true)
+
+  user User @relation(fields: [user_id], references: [id])
+}
