@@ -4,6 +4,9 @@ import { apiClient } from "../lib/api-client";
 import { QualityLineChart } from "../components/charts/QualityLineChart";
 import { DurationBarChart } from "../components/charts/DurationBarChart";
 import { MoodDonutChart } from "../components/charts/MoodDonutChart";
+import { QualityCalendarHeatmap } from "../components/charts/QualityCalendarHeatmap";
+import { CorrelationScatter } from "../components/charts/CorrelationScatter";
+import { ExerciseComparisonChart } from "../components/charts/ExerciseComparisonChart";
 
 interface SummaryStats {
   period_days: number;
@@ -18,6 +21,11 @@ const KPI_LABELS: Record<string, string> = {
   entries_count: "Registros (7 días)",
 };
 
+function average(values: number[]): number | null {
+  if (values.length === 0) return null;
+  return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;
+}
+
 export function Dashboard() {
   const [stats, setStats] = useState<SummaryStats | null>(null);
   const [entries, setEntries] = useState<SleepEntry[] | null>(null);
@@ -27,7 +35,7 @@ export function Dashboard() {
   useEffect(() => {
     Promise.all([
       apiClient.get<SummaryStats>("/sleep/stats/summary"),
-      apiClient.get<{ entries: SleepEntry[] }>("/sleep?limit=30"),
+      apiClient.get<{ entries: SleepEntry[] }>("/sleep?limit=90"),
       apiClient.get<UserProfile>("/user/profile"),
     ])
       .then(([summary, sleepRes, profile]) => {
@@ -38,10 +46,11 @@ export function Dashboard() {
       .catch((e: Error) => setError(e.message));
   }, []);
 
-  const completeEntries = (entries ?? [])
-    .filter((e) => e.is_complete)
+  const allEntries = (entries ?? [])
     .slice()
     .reverse(); // la API devuelve desc, los gráficos quieren orden cronológico
+
+  const completeEntries = allEntries.filter((e) => e.is_complete);
 
   const qualityData = completeEntries.map((e) => ({
     date: e.sleep_date.slice(5, 10),
@@ -59,6 +68,26 @@ export function Dashboard() {
     return acc;
   }, {});
   const moodData = Object.entries(moodCounts).map(([mood, count]) => ({ mood, count }));
+
+  const heatmapData = allEntries.map((e) => ({
+    date: e.sleep_date.slice(0, 10),
+    quality: e.is_complete ? e.sleep_quality ?? null : null,
+  }));
+
+  const caffeineData = completeEntries
+    .filter((e) => e.sleep_quality != null)
+    .map((e) => ({ x: e.caffeine_cups ?? 0, y: e.sleep_quality as number }));
+
+  const stressData = completeEntries
+    .filter((e) => e.sleep_quality != null && e.stress_level != null)
+    .map((e) => ({ x: e.stress_level as number, y: e.sleep_quality as number }));
+
+  const qualityWithExercise = average(
+    completeEntries.filter((e) => e.exercise && e.sleep_quality != null).map((e) => e.sleep_quality as number)
+  );
+  const qualityWithoutExercise = average(
+    completeEntries.filter((e) => !e.exercise && e.sleep_quality != null).map((e) => e.sleep_quality as number)
+  );
 
   return (
     <div>
@@ -83,18 +112,35 @@ export function Dashboard() {
         </p>
       )}
 
+      <div className="mb-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+        <h3 className="mb-2 text-sm font-semibold text-slate-500">Calidad por día (últimos 90 días)</h3>
+        <QualityCalendarHeatmap data={heatmapData} />
+      </div>
+
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
         <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Calidad de sueño (últimos 30 días)</h3>
+          <h3 className="mb-2 text-sm font-semibold text-slate-500">Calidad de sueño</h3>
           <QualityLineChart data={qualityData} />
         </div>
         <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
           <h3 className="mb-2 text-sm font-semibold text-slate-500">Duración vs. objetivo ({goalHours}h)</h3>
           <DurationBarChart data={durationData} goalHours={goalHours} />
         </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800 lg:col-span-2">
+        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
           <h3 className="mb-2 text-sm font-semibold text-slate-500">Ánimo al despertar</h3>
           <MoodDonutChart data={moodData} />
+        </div>
+        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+          <h3 className="mb-2 text-sm font-semibold text-slate-500">Ejercicio: con vs. sin</h3>
+          <ExerciseComparisonChart withExercise={qualityWithExercise} withoutExercise={qualityWithoutExercise} />
+        </div>
+        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+          <h3 className="mb-2 text-sm font-semibold text-slate-500">Cafeína vs. calidad</h3>
+          <CorrelationScatter data={caffeineData} xLabel="Tazas de café" />
+        </div>
+        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+          <h3 className="mb-2 text-sm font-semibold text-slate-500">Estrés vs. calidad</h3>
+          <CorrelationScatter data={stressData} xLabel="Nivel de estrés" />
         </div>
       </div>
     </div>
