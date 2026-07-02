@@ -29,7 +29,29 @@ export const sleepPredictionSchema = z.object({
   tip_for_tonight: z.string(),
 });
 
+export const monthlyTopFactorSchema = z.object({
+  factor: z.string(),
+  impact: z.enum(["positive", "negative"]),
+  description: z.string(),
+});
+
+export const monthlyReportSchema = z.object({
+  summary: z.string(),
+  top_factors: z.array(monthlyTopFactorSchema),
+  comparison_with_previous_month: z.string(),
+  suggested_goal: z.string(),
+  highlights: z.array(z.string()),
+});
+
+export const chatMessageSchema = z.object({
+  role: z.enum(["user", "assistant"]),
+  content: z.string(),
+});
+
 export type AIPattern = z.infer<typeof aiPatternSchema>;
 export type AIRecommendation = z.infer<typeof aiRecommendationSchema>;
 export type WeeklyReport = z.infer<typeof weeklyReportSchema>;
 export type SleepPrediction = z.infer<typeof sleepPredictionSchema>;
+export type MonthlyTopFactor = z.infer<typeof monthlyTopFactorSchema>;
+export type MonthlyReport = z.infer<typeof monthlyReportSchema>;
+export type ChatMessage = z.infer<typeof chatMessageSchema>;

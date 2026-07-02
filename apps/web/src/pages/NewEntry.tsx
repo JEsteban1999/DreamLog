@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { exerciseTypeSchema, stressSourceSchema, type EveningEntryInput } from "@dreamlog/shared";
+import { exerciseTypeSchema, stressSourceSchema, type EveningEntryInput, type SleepPrediction } from "@dreamlog/shared";
 import { apiClient } from "../lib/api-client";
 
 const formSchema = z.object({
@@ -58,6 +58,8 @@ const labelClass = "mb-1 block text-sm text-slate-500";
 export function NewEntry() {
   const navigate = useNavigate();
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [prediction, setPrediction] = useState<SleepPrediction | null>(null);
+  const [predictionLoading, setPredictionLoading] = useState(false);
   const {
     register,
     handleSubmit,
@@ -110,9 +112,20 @@ export function NewEntry() {
 
     try {
       await apiClient.post("/sleep", payload);
-      navigate("/log", { replace: true });
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : "Error desconocido");
+      return;
+    }
+
+    setPredictionLoading(true);
+    try {
+      const result = await apiClient.post<SleepPrediction>("/ai/predict", { tonight_factors: payload });
+      setPrediction(result);
+    } catch {
+      // La predicción es un extra; si falla (p. ej. sin API key configurada), se sigue igual.
+      navigate("/log", { replace: true });
+    } finally {
+      setPredictionLoading(false);
     }
   }
 
@@ -121,6 +134,33 @@ export function NewEntry() {
       .map(([field, err]) => `${field}: ${err?.message ?? "inválido"}`)
       .join(" · ");
     setSubmitError(messages || "El formulario tiene errores");
+  }
+
+  if (predictionLoading || prediction) {
+    return (
+      <div className="mx-auto max-w-lg">
+        <h2 className="mb-4 text-2xl font-semibold">🌙 Registro guardado</h2>
+        {predictionLoading && <p className="text-sm text-slate-500">Claude está analizando tu noche...</p>}
+        {prediction && (
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <p className="text-sm text-slate-500">Predicción de Claude para esta noche</p>
+            <p className="mt-1 text-3xl font-semibold">{prediction.predicted_quality}/10</p>
+            <p className="mt-1 text-xs text-slate-500">Confianza: {prediction.confidence}</p>
+            <p className="mt-3 text-sm">{prediction.reasoning}</p>
+            <p className="mt-3 rounded-md bg-slate-100 p-3 text-sm dark:bg-slate-800">
+              💡 {prediction.tip_for_tonight}
+            </p>
+            <button
+              type="button"
+              onClick={() => navigate("/log", { replace: true })}
+              className="mt-4 w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-900"
+            >
+              Continuar
+            </button>
+          </div>
+        )}
+      </div>
+    );
   }
 
   return (
