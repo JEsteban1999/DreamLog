@@ -225,7 +225,7 @@ export async function chatAboutSleepData(userId: string, history: ChatMessage[])
     max_tokens: 1024,
     thinking: { type: "adaptive" },
     output_config: { effort: "medium" },
-    system: `Eres un asistente que responde preguntas sobre el historial de sueño del usuario. Objetivo de horas: ${user.goal_hours}. Historial (hasta 90 noches, más reciente primero):\n${JSON.stringify(entries)}`,
+    system: `Eres un asistente que responde preguntas sobre el historial de sueño del usuario, dentro de una burbuja de chat angosta (móvil incluido). Responde en prosa conversacional breve, en párrafos cortos. No uses tablas, encabezados markdown (#/##) ni bloques de código — si necesitas enumerar cosas, usa una lista simple con guiones. Objetivo de horas: ${user.goal_hours}. Historial (hasta 90 noches, más reciente primero):\n${JSON.stringify(entries)}`,
     messages: history.map((m) => ({ role: m.role, content: m.content })),
   });
 

@@ -1,6 +1,14 @@
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 import type { ChatMessage } from "@dreamlog/shared";
 import { apiClient } from "../lib/api-client";
+
+const markdownComponents = {
+  p: (props: React.ComponentProps<"p">) => <p className="mb-2 last:mb-0" {...props} />,
+  ul: (props: React.ComponentProps<"ul">) => <ul className="mb-2 list-inside list-disc space-y-1" {...props} />,
+  ol: (props: React.ComponentProps<"ol">) => <ol className="mb-2 list-inside list-decimal space-y-1" {...props} />,
+  strong: (props: React.ComponentProps<"strong">) => <strong className="font-semibold" {...props} />,
+};
 
 const MESSAGE_LIMIT = 20;
 
@@ -53,7 +61,11 @@ export function AIChat() {
                 : "bg-slate-100 dark:bg-slate-800"
             }`}
           >
-            {m.content}
+            {m.role === "assistant" ? (
+              <ReactMarkdown components={markdownComponents}>{m.content}</ReactMarkdown>
+            ) : (
+              m.content
+            )}
           </div>
         ))}
         {sending && <p className="text-sm text-slate-500">Claude está pensando...</p>}
