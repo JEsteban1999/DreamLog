@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { notificationSettingsSchema, type NotificationSettings, type UserProfile } from "@dreamlog/shared";
+import { notificationSettingsSchema, type NotificationSettings, type SleepEntry, type UserProfile } from "@dreamlog/shared";
 import { apiClient, downloadFile } from "../lib/api-client";
 import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "../lib/push";
+import { DashboardCharts, getCompleteEntries } from "../components/dashboard/DashboardCharts";
+import { exportDashboardToPdf } from "../lib/pdf-export";
 
 const profileFormSchema = z.object({
   name: z.string().max(100).optional(),
@@ -287,8 +289,10 @@ function PushToggle() {
 }
 
 function ExportSection() {
-  const [busy, setBusy] = useState<"csv" | "json" | null>(null);
+  const [busy, setBusy] = useState<"csv" | "json" | "pdf" | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [pdfData, setPdfData] = useState<{ entries: SleepEntry[]; goalHours: number } | null>(null);
+  const pdfChartsRef = useRef<HTMLDivElement>(null);
 
   async function handleExport(format: "csv" | "json") {
     setBusy(format);
@@ -302,11 +306,45 @@ function ExportSection() {
     }
   }
 
+  async function handleExportPdf() {
+    setBusy("pdf");
+    setError(null);
+    try {
+      const [{ entries }, profile] = await Promise.all([
+        apiClient.get<{ entries: SleepEntry[] }>("/sleep?limit=90"),
+        apiClient.get<UserProfile>("/user/profile"),
+      ]);
+      // Monta las gráficas ocultas fuera de pantalla; se capturan en el efecto de abajo.
+      setPdfData({ entries: entries.slice().reverse(), goalHours: profile.goal_hours ?? 8 });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error desconocido");
+      setBusy(null);
+    }
+  }
+
+  useEffect(() => {
+    if (!pdfData) return;
+    // Pequeño margen para que Recharts termine de medir y dibujar antes de capturar.
+    const timer = setTimeout(async () => {
+      try {
+        if (pdfChartsRef.current) {
+          await exportDashboardToPdf(pdfChartsRef.current, getCompleteEntries(pdfData.entries));
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Error al generar el PDF");
+      } finally {
+        setPdfData(null);
+        setBusy(null);
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [pdfData]);
+
   return (
     <div className="mt-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
       <h3 className="mb-2 font-semibold">Exportar datos</h3>
       <p className="mb-3 text-sm text-slate-500">Descarga todo tu historial de sueño.</p>
-      <div className="flex gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           onClick={() => handleExport("csv")}
@@ -323,8 +361,22 @@ function ExportSection() {
         >
           {busy === "json" ? "Descargando..." : "Descargar JSON"}
         </button>
+        <button
+          type="button"
+          onClick={handleExportPdf}
+          disabled={busy !== null}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium disabled:opacity-50 dark:border-slate-700"
+        >
+          {busy === "pdf" ? "Generando PDF..." : "Descargar PDF"}
+        </button>
       </div>
       {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+
+      {pdfData && (
+        <div className="fixed -left-[9999px] top-0 w-[800px]">
+          <DashboardCharts ref={pdfChartsRef} entries={pdfData.entries} goalHours={pdfData.goalHours} />
+        </div>
+      )}
     </div>
   );
 }
