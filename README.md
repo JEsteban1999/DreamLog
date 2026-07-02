@@ -59,6 +59,11 @@ pnpm dev
 - **Frontend (Vercel):** Root Directory `apps/web`, detecta Vite automáticamente.
 - El build del backend usa `esbuild` para empaquetar `@dreamlog/shared` junto con el código — Node en producción no puede resolver los imports internos del paquete workspace sin esto.
 
-## Pendiente para completar la Fase 1
+## Notificaciones push
 
-- Notificaciones push (Web Push + Service Worker)
+- Web Push (VAPID) + Service Worker (`apps/web/public/sw.js`). El usuario activa/desactiva desde Ajustes.
+- Render (free tier) no tiene cron persistente, así que un **GitHub Actions workflow** (`.github/workflows/notifications.yml`) llama cada 15 min a `POST /internal/notifications/check` (protegido con `CRON_SECRET`, no con sesión de usuario).
+- Ese endpoint calcula la hora local de cada usuario (según su `timezone`) y envía el recordatorio si coincide con `bedtime_time`/`wakeup_time`, evitando reenvíos el mismo día.
+- Secrets del workflow (`BACKEND_URL`, `CRON_SECRET`) van en **Settings → Secrets and variables → Actions** a nivel de repositorio — no en un "Environment", ya que el workflow no declara `environment:` y no vería esos secrets.
+
+Fase 1 (MVP core) completa.
