@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SleepEntry, UserProfile } from "@dreamlog/shared";
 import { apiClient } from "../lib/api-client";
 import { QualityLineChart } from "../components/charts/QualityLineChart";
@@ -7,6 +7,7 @@ import { MoodDonutChart } from "../components/charts/MoodDonutChart";
 import { QualityCalendarHeatmap } from "../components/charts/QualityCalendarHeatmap";
 import { CorrelationScatter } from "../components/charts/CorrelationScatter";
 import { ExerciseComparisonChart } from "../components/charts/ExerciseComparisonChart";
+import { exportDashboardToPdf } from "../lib/pdf-export";
 
 interface SummaryStats {
   period_days: number;
@@ -31,6 +32,8 @@ export function Dashboard() {
   const [entries, setEntries] = useState<SleepEntry[] | null>(null);
   const [goalHours, setGoalHours] = useState(8);
   const [error, setError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const chartsRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     Promise.all([
@@ -89,9 +92,31 @@ export function Dashboard() {
     completeEntries.filter((e) => !e.exercise && e.sleep_quality != null).map((e) => e.sleep_quality as number)
   );
 
+  async function handleExportPdf() {
+    if (!chartsRef.current) return;
+    setExporting(true);
+    try {
+      await exportDashboardToPdf(chartsRef.current, completeEntries);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al generar el PDF");
+    } finally {
+      setExporting(false);
+    }
+  }
+
   return (
     <div>
-      <h2 className="mb-4 text-2xl font-semibold">Dashboard</h2>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-2xl font-semibold">Dashboard</h2>
+        <button
+          type="button"
+          onClick={handleExportPdf}
+          disabled={exporting || completeEntries.length === 0}
+          className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+        >
+          {exporting ? "Generando PDF..." : "Descargar PDF"}
+        </button>
+      </div>
 
       {error && <p className="mb-4 text-sm text-red-500">Error al cargar datos: {error}</p>}
 
@@ -112,35 +137,37 @@ export function Dashboard() {
         </p>
       )}
 
-      <div className="mb-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-        <h3 className="mb-2 text-sm font-semibold text-slate-500">Calidad por día (últimos 90 días)</h3>
-        <QualityCalendarHeatmap data={heatmapData} />
-      </div>
+      <div ref={chartsRef} className="bg-white dark:bg-slate-950">
+        <div className="mb-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+          <h3 className="mb-2 text-sm font-semibold text-slate-500">Calidad por día (últimos 90 días)</h3>
+          <QualityCalendarHeatmap data={heatmapData} />
+        </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Calidad de sueño</h3>
-          <QualityLineChart data={qualityData} />
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Duración vs. objetivo ({goalHours}h)</h3>
-          <DurationBarChart data={durationData} goalHours={goalHours} />
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Ánimo al despertar</h3>
-          <MoodDonutChart data={moodData} />
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Ejercicio: con vs. sin</h3>
-          <ExerciseComparisonChart withExercise={qualityWithExercise} withoutExercise={qualityWithoutExercise} />
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Cafeína vs. calidad</h3>
-          <CorrelationScatter data={caffeineData} xLabel="Tazas de café" />
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Estrés vs. calidad</h3>
-          <CorrelationScatter data={stressData} xLabel="Nivel de estrés" />
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <h3 className="mb-2 text-sm font-semibold text-slate-500">Calidad de sueño</h3>
+            <QualityLineChart data={qualityData} />
+          </div>
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <h3 className="mb-2 text-sm font-semibold text-slate-500">Duración vs. objetivo ({goalHours}h)</h3>
+            <DurationBarChart data={durationData} goalHours={goalHours} />
+          </div>
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <h3 className="mb-2 text-sm font-semibold text-slate-500">Ánimo al despertar</h3>
+            <MoodDonutChart data={moodData} />
+          </div>
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <h3 className="mb-2 text-sm font-semibold text-slate-500">Ejercicio: con vs. sin</h3>
+            <ExerciseComparisonChart withExercise={qualityWithExercise} withoutExercise={qualityWithoutExercise} />
+          </div>
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <h3 className="mb-2 text-sm font-semibold text-slate-500">Cafeína vs. calidad</h3>
+            <CorrelationScatter data={caffeineData} xLabel="Tazas de café" />
+          </div>
+          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+            <h3 className="mb-2 text-sm font-semibold text-slate-500">Estrés vs. calidad</h3>
+            <CorrelationScatter data={stressData} xLabel="Nivel de estrés" />
+          </div>
         </div>
       </div>
     </div>
