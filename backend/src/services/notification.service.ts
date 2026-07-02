@@ -33,6 +33,12 @@ function isWithinWindow(currentHHMM: string, configuredHHMM: string, windowMin =
   return diff < windowMin;
 }
 
+// ¿Ya pasó la hora configurada (sin importar cuánto)? Para condiciones tipo
+// "avisar si a esta hora del día todavía no pasó X", no solo "avisar justo a esta hora".
+function isPastTimeOfDay(currentHHMM: string, configuredHHMM: string): boolean {
+  return minutesOfDay(currentHHMM) >= minutesOfDay(configuredHHMM);
+}
+
 async function sendToUser(userId: string, payload: { title: string; body: string }) {
   const subscriptions = await prisma.pushSubscription.findMany({ where: { user_id: userId } });
 
@@ -55,6 +61,32 @@ async function sendToUser(userId: string, payload: { title: string; body: string
       }
     })
   );
+}
+
+async function computeWeeklySleepDebt(userId: string, goalHours: number, todayLocal: string): Promise<number> {
+  const from = new Date(todayLocal);
+  from.setDate(from.getDate() - 7);
+
+  const entries = await prisma.sleepEntry.findMany({
+    where: { user_id: userId, deleted_at: null, is_complete: true, sleep_date: { gte: from } },
+  });
+
+  return entries.reduce((debt, e) => debt + Math.max(0, goalHours - (e.duration_hours ?? goalHours)), 0);
+}
+
+async function hasActiveStreak(userId: string, todayLocal: string): Promise<boolean> {
+  const entries = await prisma.sleepEntry.findMany({
+    where: { user_id: userId, deleted_at: null, is_complete: true },
+    orderBy: { sleep_date: "desc" },
+    take: 30,
+  });
+
+  const loggedDates = new Set(entries.map((e) => e.sleep_date.toISOString().slice(0, 10)));
+
+  // Racha "activa" = al menos ayer tiene registro completo.
+  const yesterday = new Date(todayLocal);
+  yesterday.setDate(yesterday.getDate() - 1);
+  return loggedDates.has(yesterday.toISOString().slice(0, 10));
 }
 
 export async function checkAndSendReminders() {
@@ -96,6 +128,44 @@ export async function checkAndSendReminders() {
         where: { user_id: user.id },
         data: { last_wakeup_sent_date: date },
       });
+    }
+
+    if (prefs.sleep_debt_alert && prefs.last_debt_sent_date !== date) {
+      const debt = await computeWeeklySleepDebt(user.id, user.goal_hours, date);
+      if (debt > prefs.sleep_debt_threshold) {
+        await sendToUser(user.id, {
+          title: "⚠️ Deuda de sueño alta",
+          body: `Llevas ${debt.toFixed(1)}h de deuda de sueño esta semana. Tu cuerpo lo necesita.`,
+        });
+        await prisma.notificationSettings.update({
+          where: { user_id: user.id },
+          data: { last_debt_sent_date: date },
+        });
+      }
+    }
+
+    // Racha en riesgo: solo tiene sentido avisar después de la hora de acostarse,
+    // cuando ya casi se cierra la ventana para registrar la noche y mantener la racha.
+    if (
+      prefs.streak_reminder &&
+      isPastTimeOfDay(hhmm, prefs.bedtime_time) &&
+      prefs.last_streak_sent_date !== date
+    ) {
+      const [todayEntry, streakActive] = await Promise.all([
+        prisma.sleepEntry.findFirst({ where: { user_id: user.id, deleted_at: null, sleep_date: new Date(date) } }),
+        hasActiveStreak(user.id, date),
+      ]);
+
+      if (!todayEntry && streakActive) {
+        await sendToUser(user.id, {
+          title: "📝 No pierdas tu racha",
+          body: "No olvides registrar tu sueño de esta noche.",
+        });
+        await prisma.notificationSettings.update({
+          where: { user_id: user.id },
+          data: { last_streak_sent_date: date },
+        });
+      }
     }
   }
 }

@@ -1,5 +1,6 @@
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuthStore } from "../../store/auth.store";
+import { useUIStore } from "../../store/ui.store";
 
 const NAV_ITEMS = [
   { to: "/", label: "Dashboard", end: true },
@@ -11,12 +12,23 @@ const NAV_ITEMS = [
 
 export function AppLayout() {
   const signOut = useAuthStore((s) => s.signOut);
+  const { isDark, toggleDark } = useUIStore();
 
   return (
     <div className="min-h-svh bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <div className="mx-auto flex max-w-6xl">
         <aside className="hidden w-56 shrink-0 border-r border-slate-200 p-4 dark:border-slate-800 sm:block">
-          <h1 className="mb-6 text-lg font-semibold">🌙 DreamLog</h1>
+          <div className="mb-6 flex items-center justify-between">
+            <h1 className="text-lg font-semibold">🌙 DreamLog</h1>
+            <button
+              type="button"
+              onClick={toggleDark}
+              title={isDark ? "Cambiar a modo claro" : "Cambiar a modo oscuro"}
+              className="rounded-md p-1.5 text-sm hover:bg-slate-100 dark:hover:bg-slate-900"
+            >
+              {isDark ? "☀️" : "🌙"}
+            </button>
+          </div>
           <nav className="flex flex-col gap-1">
             {NAV_ITEMS.map((item) => (
               <NavLink

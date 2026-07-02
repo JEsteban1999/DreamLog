@@ -3,6 +3,8 @@ import { z } from "zod";
 import { notificationSettingsSchema } from "@dreamlog/shared";
 import { requireAuth } from "../middleware/auth.js";
 import { prisma } from "../lib/prisma.js";
+import { toCsv } from "../lib/csv.js";
+import * as sleepService from "../services/sleep.service.js";
 
 const pushSubscriptionSchema = z.object({
   endpoint: z.string().url(),
@@ -87,4 +89,21 @@ userRoutes.delete("/push-subscription", async (c) => {
   const { endpoint } = await c.req.json();
   await prisma.pushSubscription.deleteMany({ where: { endpoint, user_id: userId } });
   return c.body(null, 204);
+});
+
+userRoutes.get("/export", async (c) => {
+  const userId = c.get("userId");
+  const format = c.req.query("format") === "csv" ? "csv" : "json";
+  const entries = await sleepService.getAllEntries(userId);
+
+  if (format === "csv") {
+    const rows = entries.map((e) => ({ ...e, ai_prediction: e.ai_prediction ? JSON.stringify(e.ai_prediction) : "" }));
+    c.header("Content-Type", "text/csv; charset=utf-8");
+    c.header("Content-Disposition", 'attachment; filename="dreamlog-export.csv"');
+    return c.body(toCsv(rows));
+  }
+
+  c.header("Content-Type", "application/json; charset=utf-8");
+  c.header("Content-Disposition", 'attachment; filename="dreamlog-export.json"');
+  return c.body(JSON.stringify(entries, null, 2));
 });

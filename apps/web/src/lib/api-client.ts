@@ -37,3 +37,22 @@ export const apiClient = {
   delete: <T>(path: string, body?: unknown) =>
     request<T>(path, { method: "DELETE", body: body ? JSON.stringify(body) : undefined }),
 };
+
+export async function downloadFile(path: string, filename: string): Promise<void> {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
+
+  const res = await fetch(`${API_BASE}${path}`, {
+    headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
+  });
+  if (!res.ok) throw new Error(`Error ${res.status}`);
+
+  const blob = await res.blob();
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}

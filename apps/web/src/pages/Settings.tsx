@@ -3,7 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { notificationSettingsSchema, type NotificationSettings, type UserProfile } from "@dreamlog/shared";
-import { apiClient } from "../lib/api-client";
+import { apiClient, downloadFile } from "../lib/api-client";
 import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "../lib/push";
 
 const profileFormSchema = z.object({
@@ -286,6 +286,49 @@ function PushToggle() {
   );
 }
 
+function ExportSection() {
+  const [busy, setBusy] = useState<"csv" | "json" | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  async function handleExport(format: "csv" | "json") {
+    setBusy(format);
+    setError(null);
+    try {
+      await downloadFile(`/user/export?format=${format}`, `dreamlog-export.${format}`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error desconocido");
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <div className="mt-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
+      <h3 className="mb-2 font-semibold">Exportar datos</h3>
+      <p className="mb-3 text-sm text-slate-500">Descarga todo tu historial de sueño.</p>
+      <div className="flex gap-2">
+        <button
+          type="button"
+          onClick={() => handleExport("csv")}
+          disabled={busy !== null}
+          className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+        >
+          {busy === "csv" ? "Descargando..." : "Descargar CSV"}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleExport("json")}
+          disabled={busy !== null}
+          className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium disabled:opacity-50 dark:border-slate-700"
+        >
+          {busy === "json" ? "Descargando..." : "Descargar JSON"}
+        </button>
+      </div>
+      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+    </div>
+  );
+}
+
 export function Settings() {
   return (
     <div className="mx-auto max-w-lg">
@@ -293,6 +336,7 @@ export function Settings() {
       <ProfileForm />
       <NotificationsForm />
       <PushToggle />
+      <ExportSection />
     </div>
   );
 }

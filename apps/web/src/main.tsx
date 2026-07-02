@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import './index.css'
+import './store/ui.store.ts' // aplica la clase .dark antes de renderizar cualquier página
 import App from './App.tsx'
 
 createRoot(document.getElementById('root')!).render(

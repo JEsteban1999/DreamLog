@@ -103,6 +103,8 @@ model NotificationSettings {
   // Evita reenviar el mismo recordatorio dos veces el mismo día local del usuario
   last_bedtime_sent_date String?
   last_wakeup_sent_date  String?
+  last_debt_sent_date    String?
+  last_streak_sent_date  String?
 
   user User @relation(fields: [user_id], references: [id])
 }

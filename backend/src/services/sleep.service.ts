@@ -99,6 +99,13 @@ export async function listEntries(userId: string, opts: { from?: Date; to?: Date
   });
 }
 
+export async function getAllEntries(userId: string) {
+  return prisma.sleepEntry.findMany({
+    where: { user_id: userId, deleted_at: null },
+    orderBy: { sleep_date: "asc" },
+  });
+}
+
 export async function softDeleteEntry(entryId: string, userId: string) {
   return prisma.sleepEntry.updateMany({
     where: { id: entryId, user_id: userId },
