@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import type { SleepEntry } from "@dreamlog/shared";
 import { apiClient } from "../lib/api-client";
+import { btnPrimary, card, pageTitle } from "../lib/ui";
 
 function formatDateTime(value: string | null | undefined): string {
   if (!value) return "--";
@@ -15,9 +16,9 @@ function formatTime(value: string | null | undefined): string {
 
 function Row({ label, value }: { label: string; value: React.ReactNode }) {
   return (
-    <div className="flex justify-between border-b border-slate-100 py-2 text-sm last:border-0 dark:border-slate-800">
-      <span className="text-slate-500">{label}</span>
-      <span className="font-medium">{value ?? "--"}</span>
+    <div className="flex justify-between gap-4 border-b border-hairsoft py-2.5 text-sm last:border-0">
+      <span className="text-muted">{label}</span>
+      <span className="text-right font-medium text-ink">{value ?? "--"}</span>
     </div>
   );
 }
@@ -35,18 +36,18 @@ export function EntryDetail() {
       .catch((e: Error) => setError(e.message));
   }, [id]);
 
-  if (error) return <p className="text-sm text-red-500">Error: {error}</p>;
-  if (!entry) return <p className="text-sm text-slate-500">Cargando...</p>;
+  if (error) return <p className="text-sm text-danger">Error: {error}</p>;
+  if (!entry) return <p className="text-sm text-faint">Cargando…</p>;
 
   return (
     <div className="mx-auto max-w-lg">
-      <Link to="/log" className="mb-4 inline-block text-sm text-slate-500 hover:underline">
+      <Link to="/log" className="mb-4 inline-block text-sm text-muted hover:text-ink">
         ← Volver al historial
       </Link>
-      <h2 className="mb-4 text-2xl font-semibold">Noche del {entry.sleep_date.slice(0, 10)}</h2>
+      <h2 className={`mb-5 ${pageTitle}`}>Noche del {entry.sleep_date.slice(0, 10)}</h2>
 
-      <section className="mb-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-        <h3 className="mb-2 font-semibold">🌙 Nocturno</h3>
+      <section className={`mb-4 p-5 ${card}`}>
+        <h3 className="mb-2 font-semibold text-ink">🌙 Nocturno</h3>
         <Row label="Hora de acostarse" value={formatDateTime(entry.sleep_time)} />
         <Row label="Tazas de café" value={entry.caffeine_cups} />
         <Row label="Último café" value={formatTime(entry.caffeine_last_hour)} />
@@ -63,8 +64,8 @@ export function EntryDetail() {
       </section>
 
       {entry.is_complete ? (
-        <section className="mb-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 font-semibold">☀️ Matutino</h3>
+        <section className={`mb-4 p-5 ${card}`}>
+          <h3 className="mb-2 font-semibold text-ink">☀️ Matutino</h3>
           <Row label="Hora de despertar" value={formatDateTime(entry.wake_time)} />
           <Row label="Duración" value={entry.duration_hours ? `${entry.duration_hours}h` : "--"} />
           <Row label="Eficiencia" value={entry.sleep_efficiency ? `${entry.sleep_efficiency}%` : "--"} />
@@ -77,11 +78,8 @@ export function EntryDetail() {
           {entry.notes_morning && <Row label="Notas de la mañana" value={entry.notes_morning} />}
         </section>
       ) : (
-        <Link
-          to={`/log/${entry.id}/morning`}
-          className="block w-full rounded-md bg-slate-900 px-3 py-2 text-center text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-900"
-        >
-          Completar registro matutino
+        <Link to={`/log/${entry.id}/morning`} className={`${btnPrimary} w-full`}>
+          ☀️ Completar registro matutino
         </Link>
       )}
     </div>

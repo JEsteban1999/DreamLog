@@ -5,6 +5,8 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { exerciseTypeSchema, stressSourceSchema, type EveningEntryInput, type SleepPrediction } from "@dreamlog/shared";
 import { apiClient } from "../lib/api-client";
+import { input as inputClass, label as labelClass, btnPrimary } from "../lib/ui";
+import { Logo } from "../components/Logo";
 
 const formSchema = z.object({
   sleep_date: z.string().min(1, "Requerido"),
@@ -51,9 +53,9 @@ function todayDate(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-const inputClass =
-  "w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900";
-const labelClass = "mb-1 block text-sm text-slate-500";
+const toggleRow =
+  "flex items-center gap-2.5 rounded-[10px] border border-hairsoft bg-card2 px-3 py-2.5 text-sm text-ink";
+const checkboxClass = "h-4 w-4 accent-[var(--primary)]";
 
 export function NewEntry() {
   const navigate = useNavigate();
@@ -139,21 +141,37 @@ export function NewEntry() {
   if (predictionLoading || prediction) {
     return (
       <div className="mx-auto max-w-lg">
-        <h2 className="mb-4 text-2xl font-semibold">🌙 Registro guardado</h2>
-        {predictionLoading && <p className="text-sm text-slate-500">Claude está analizando tu noche...</p>}
+        <div className="mb-5 flex items-center gap-2.5">
+          <Logo size={26} />
+          <h2 className="font-serif text-2xl font-semibold tracking-tight">Noche guardada</h2>
+        </div>
+
+        {predictionLoading && (
+          <div className="rounded-2xl border border-hair bg-card p-5 text-sm text-muted">
+            Claude está analizando tu noche…
+          </div>
+        )}
+
         {prediction && (
-          <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-            <p className="text-sm text-slate-500">Predicción de Claude para esta noche</p>
-            <p className="mt-1 text-3xl font-semibold">{prediction.predicted_quality}/10</p>
-            <p className="mt-1 text-xs text-slate-500">Confianza: {prediction.confidence}</p>
-            <p className="mt-3 text-sm">{prediction.reasoning}</p>
-            <p className="mt-3 rounded-md bg-slate-100 p-3 text-sm dark:bg-slate-800">
+          <div className="rounded-2xl border border-hair bg-card p-6">
+            <p className="text-[13px] font-medium text-muted">Predicción de Claude para esta noche</p>
+            <div className="mt-2 flex items-baseline gap-2">
+              <span className="font-serif text-5xl font-semibold leading-none tnum text-warm">
+                {prediction.predicted_quality}
+              </span>
+              <span className="text-lg text-faint">/10</span>
+              <span className="ml-2 rounded-full bg-coolsoft px-2.5 py-1 text-[11px] font-semibold text-cool">
+                confianza {prediction.confidence}
+              </span>
+            </div>
+            <p className="mt-4 text-sm leading-relaxed text-ink">{prediction.reasoning}</p>
+            <div className="mt-4 rounded-xl border border-hair border-l-[3px] border-l-cool bg-coolsoft px-4 py-3 text-[13px] leading-relaxed text-ink">
               💡 {prediction.tip_for_tonight}
-            </p>
+            </div>
             <button
               type="button"
               onClick={() => navigate("/log", { replace: true })}
-              className="mt-4 w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white dark:bg-slate-100 dark:text-slate-900"
+              className={`${btnPrimary} mt-5 w-full`}
             >
               Continuar
             </button>
@@ -165,28 +183,31 @@ export function NewEntry() {
 
   return (
     <div className="mx-auto max-w-lg">
-      <h2 className="mb-1 text-2xl font-semibold">🌙 Registro nocturno</h2>
-      <p className="mb-4 text-xs text-slate-500">
+      <div className="mb-1.5 flex items-center gap-2.5">
+        <Logo size={26} />
+        <h2 className="font-serif text-2xl font-semibold tracking-tight">Registro nocturno</h2>
+      </div>
+      <p className="mb-5 text-xs leading-relaxed text-faint">
         "Fecha de la noche" es el día que estás cerrando (aunque te acuestes después de medianoche). Ej: si hoy es 1
         de julio y te acuestas a la 1 a.m., la fecha sigue siendo 30 de junio — los factores del día (café, ejercicio)
         se registran en esa fecha, y la hora de acostarse se ajusta sola al cruzar medianoche.
       </p>
 
-      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4 rounded-2xl border border-hair bg-card p-5">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className={labelClass} htmlFor="sleep_date">
               Fecha de la noche
             </label>
             <input id="sleep_date" type="date" className={inputClass} {...register("sleep_date")} />
-            {errors.sleep_date && <p className="mt-1 text-xs text-red-500">{errors.sleep_date.message}</p>}
+            {errors.sleep_date && <p className="mt-1 text-xs text-danger">{errors.sleep_date.message}</p>}
           </div>
           <div>
             <label className={labelClass} htmlFor="sleep_time">
               Hora de acostarse
             </label>
             <input id="sleep_time" type="time" className={inputClass} {...register("sleep_time")} />
-            {errors.sleep_time && <p className="mt-1 text-xs text-red-500">{errors.sleep_time.message}</p>}
+            {errors.sleep_time && <p className="mt-1 text-xs text-danger">{errors.sleep_time.message}</p>}
           </div>
         </div>
 
@@ -212,8 +233,8 @@ export function NewEntry() {
         </div>
 
         <div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register("exercise")} />
+          <label className={toggleRow}>
+            <input type="checkbox" className={checkboxClass} {...register("exercise")} />
             ¿Hiciste ejercicio hoy?
           </label>
         </div>
@@ -257,8 +278,8 @@ export function NewEntry() {
             />
           </div>
           <div className="flex items-end pb-2">
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" {...register("screen_before_sleep")} />
+            <label className={toggleRow}>
+              <input type="checkbox" className={checkboxClass} {...register("screen_before_sleep")} />
               Pantalla en los últimos 60 min
             </label>
           </div>
@@ -293,8 +314,8 @@ export function NewEntry() {
         </div>
 
         <div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register("alcohol")} />
+          <label className={toggleRow}>
+            <input type="checkbox" className={checkboxClass} {...register("alcohol")} />
             ¿Consumiste alcohol?
           </label>
         </div>
@@ -314,14 +335,14 @@ export function NewEntry() {
           </div>
         )}
 
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" {...register("heavy_meal")} />
+        <label className={toggleRow}>
+          <input type="checkbox" className={checkboxClass} {...register("heavy_meal")} />
           Comida pesada en las últimas 3h
         </label>
 
         <div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register("nap_today")} />
+          <label className={toggleRow}>
+            <input type="checkbox" className={checkboxClass} {...register("nap_today")} />
             ¿Tomaste siesta hoy?
           </label>
         </div>
@@ -348,14 +369,10 @@ export function NewEntry() {
           <textarea id="notes_before" rows={3} className={inputClass} {...register("notes_before")} />
         </div>
 
-        {submitError && <p className="text-sm text-red-500">{submitError}</p>}
+        {submitError && <p className="text-sm text-danger">{submitError}</p>}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-        >
-          {isSubmitting ? "Guardando..." : "Guardar registro nocturno"}
+        <button type="submit" disabled={isSubmitting} className={`${btnPrimary} w-full`}>
+          {isSubmitting ? "Guardando…" : "🌙 Guardar noche"}
         </button>
       </form>
     </div>

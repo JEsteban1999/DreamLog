@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { dreamTypeSchema, moodOnWakeSchema, type MorningEntryInput, type SleepEntry } from "@dreamlog/shared";
 import { apiClient } from "../lib/api-client";
+import { input as inputClass, label as labelClass, btnPrimary } from "../lib/ui";
 
 const formSchema = z.object({
   wake_time: z.string().min(1, "Requerido"),
@@ -32,9 +33,9 @@ function toWakeISODateTime(sleepDate: string, sleepTime: string | null | undefin
   return wake.toISOString();
 }
 
-const inputClass =
-  "w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900";
-const labelClass = "mb-1 block text-sm text-slate-500";
+const toggleRow =
+  "flex items-center gap-2.5 rounded-[10px] border border-hairsoft bg-card2 px-3 py-2.5 text-sm text-ink";
+const checkboxClass = "h-4 w-4 accent-[var(--primary)]";
 
 export function MorningEntry() {
   const { id } = useParams<{ id: string }>();
@@ -98,28 +99,28 @@ export function MorningEntry() {
   }
 
   if (loadError) {
-    return <p className="text-sm text-red-500">Error al cargar la entrada: {loadError}</p>;
+    return <p className="text-sm text-danger">Error al cargar la entrada: {loadError}</p>;
   }
 
   if (!entry) {
-    return <p className="text-sm text-slate-500">Cargando...</p>;
+    return <p className="text-sm text-faint">Cargando…</p>;
   }
 
   return (
     <div className="mx-auto max-w-lg">
-      <h2 className="mb-1 text-2xl font-semibold">☀️ Registro matutino</h2>
-      <p className="mb-4 text-sm text-slate-500">
+      <h2 className="mb-1 font-serif text-2xl font-semibold tracking-tight">☀️ Registro matutino</h2>
+      <p className="mb-5 text-sm text-muted">
         Noche del {entry.sleep_date.slice(0, 10)}
         {entry.sleep_time && ` · Te acostaste a las ${new Date(entry.sleep_time).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
       </p>
 
-      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4">
+      <form onSubmit={handleSubmit(onSubmit, onInvalid)} className="space-y-4 rounded-2xl border border-hair bg-card p-5">
         <div>
           <label className={labelClass} htmlFor="wake_time">
             Hora en que despertaste
           </label>
           <input id="wake_time" type="time" className={inputClass} {...register("wake_time")} />
-          {errors.wake_time && <p className="mt-1 text-xs text-red-500">{errors.wake_time.message}</p>}
+          {errors.wake_time && <p className="mt-1 text-xs text-danger">{errors.wake_time.message}</p>}
         </div>
 
         <div className="grid grid-cols-2 gap-4">
@@ -135,7 +136,7 @@ export function MorningEntry() {
               className={inputClass}
               {...register("sleep_quality")}
             />
-            {errors.sleep_quality && <p className="mt-1 text-xs text-red-500">{errors.sleep_quality.message}</p>}
+            {errors.sleep_quality && <p className="mt-1 text-xs text-danger">{errors.sleep_quality.message}</p>}
           </div>
           <div>
             <label className={labelClass} htmlFor="energy_level">
@@ -149,7 +150,7 @@ export function MorningEntry() {
               className={inputClass}
               {...register("energy_level")}
             />
-            {errors.energy_level && <p className="mt-1 text-xs text-red-500">{errors.energy_level.message}</p>}
+            {errors.energy_level && <p className="mt-1 text-xs text-danger">{errors.energy_level.message}</p>}
           </div>
         </div>
 
@@ -167,7 +168,7 @@ export function MorningEntry() {
               <option value="sad">Triste</option>
               <option value="irritable">Irritable</option>
             </select>
-            {errors.mood_on_wake && <p className="mt-1 text-xs text-red-500">{errors.mood_on_wake.message}</p>}
+            {errors.mood_on_wake && <p className="mt-1 text-xs text-danger">{errors.mood_on_wake.message}</p>}
           </div>
           <div>
             <label className={labelClass} htmlFor="awakenings">
@@ -178,8 +179,8 @@ export function MorningEntry() {
         </div>
 
         <div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" {...register("dream_had")} />
+          <label className={toggleRow}>
+            <input type="checkbox" className={checkboxClass} {...register("dream_had")} />
             ¿Tuviste sueños?
           </label>
         </div>
@@ -216,14 +217,10 @@ export function MorningEntry() {
           <textarea id="notes_morning" rows={3} className={inputClass} {...register("notes_morning")} />
         </div>
 
-        {submitError && <p className="text-sm text-red-500">{submitError}</p>}
+        {submitError && <p className="text-sm text-danger">{submitError}</p>}
 
-        <button
-          type="submit"
-          disabled={isSubmitting}
-          className="w-full rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-        >
-          {isSubmitting ? "Guardando..." : "Guardar registro matutino"}
+        <button type="submit" disabled={isSubmitting} className={`${btnPrimary} w-full`}>
+          {isSubmitting ? "Guardando…" : "☀️ Guardar mañana"}
         </button>
       </form>
     </div>

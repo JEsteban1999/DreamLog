@@ -12,6 +12,29 @@ function average(values: number[]): number | null {
   return Math.round((values.reduce((a, b) => a + b, 0) / values.length) * 10) / 10;
 }
 
+function ChartCard({ title, subtitle, children }: { title: string; subtitle?: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-2xl border border-hair bg-card p-4 md:p-[18px]">
+      <div className="mb-3 flex items-baseline justify-between gap-2">
+        <h3 className="text-[13px] font-semibold text-ink">{title}</h3>
+        {subtitle && <span className="text-[11px] text-faint">{subtitle}</span>}
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function GroupHeader({ dot, title, note }: { dot: string; title: string; note: string }) {
+  return (
+    <div className="mb-3.5 flex items-center gap-2.5">
+      <span className="h-2 w-2 rounded-full" style={{ background: `var(${dot})` }} />
+      <span className="text-[13px] font-semibold text-ink">{title}</span>
+      <span className="hidden text-[12px] text-faint sm:inline">— {note}</span>
+      <span className="h-px flex-1 bg-hairsoft" />
+    </div>
+  );
+}
+
 interface DashboardChartsProps {
   /** Entradas en orden cronológico ascendente (más vieja primero). */
   entries: SleepEntry[];
@@ -62,37 +85,42 @@ export const DashboardCharts = forwardRef<HTMLDivElement, DashboardChartsProps>(
   );
 
   return (
-    <div ref={ref} className="bg-white dark:bg-slate-950">
-      <div className="mb-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-        <h3 className="mb-2 text-sm font-semibold text-slate-500">Calidad por día (últimos 90 días)</h3>
-        <QualityCalendarHeatmap data={heatmapData} />
+    <div ref={ref} className="bg-canvas">
+      {/* GRUPO A — resultados (lo que obtuviste al despertar) */}
+      <GroupHeader dot="--warm" title="Tu descanso" note="lo que obtuviste al despertar" />
+      <div className="mb-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <ChartCard title="Calidad del sueño" subtitle="últimos días · objetivo 8">
+            <QualityLineChart data={qualityData} />
+          </ChartCard>
+        </div>
+        <ChartCard title="Ánimo al despertar">
+          <MoodDonutChart data={moodData} />
+        </ChartCard>
+        <div className="lg:col-span-3">
+          <ChartCard title="Calendario de calidad" subtitle="últimos 90 días">
+            <QualityCalendarHeatmap data={heatmapData} />
+          </ChartCard>
+        </div>
+        <div className="lg:col-span-3">
+          <ChartCard title="Duración vs. objetivo" subtitle={`objetivo ${goalHours}h`}>
+            <DurationBarChart data={durationData} goalHours={goalHours} />
+          </ChartCard>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Calidad de sueño</h3>
-          <QualityLineChart data={qualityData} />
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Duración vs. objetivo ({goalHours}h)</h3>
-          <DurationBarChart data={durationData} goalHours={goalHours} />
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Ánimo al despertar</h3>
-          <MoodDonutChart data={moodData} />
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Ejercicio: con vs. sin</h3>
+      {/* GRUPO B — factores (lo que registras antes de dormir) */}
+      <GroupHeader dot="--cool" title="Qué lo afecta" note="factores que registras antes de dormir" />
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <ChartCard title="Con vs. sin ejercicio">
           <ExerciseComparisonChart withExercise={qualityWithExercise} withoutExercise={qualityWithoutExercise} />
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Cafeína vs. calidad</h3>
+        </ChartCard>
+        <ChartCard title="Café vs. calidad" subtitle="↘ más tazas, peor">
           <CorrelationScatter data={caffeineData} xLabel="Tazas de café" />
-        </div>
-        <div className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-          <h3 className="mb-2 text-sm font-semibold text-slate-500">Estrés vs. calidad</h3>
+        </ChartCard>
+        <ChartCard title="Estrés vs. calidad" subtitle="↘ más estrés, peor">
           <CorrelationScatter data={stressData} xLabel="Nivel de estrés" />
-        </div>
+        </ChartCard>
       </div>
     </div>
   );

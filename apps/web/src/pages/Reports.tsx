@@ -1,11 +1,18 @@
 import { useState } from "react";
 import type { WeeklyReport, MonthlyReport } from "@dreamlog/shared";
 import { apiClient } from "../lib/api-client";
+import { btnPrimary, card, pageTitle } from "../lib/ui";
 
 const TREND_LABELS: Record<WeeklyReport["trend"], string> = {
   improving: "📈 Mejorando",
   declining: "📉 Empeorando",
   stable: "➡️ Estable",
+};
+
+const PRIORITY_STYLE: Record<string, string> = {
+  alta: "bg-warmsoft text-warm",
+  media: "bg-coolsoft text-cool",
+  baja: "bg-card2 text-faint",
 };
 
 function WeeklyReportCard() {
@@ -27,41 +34,39 @@ function WeeklyReportCard() {
   }
 
   return (
-    <section className="rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold">Reporte semanal</h3>
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-        >
-          {loading ? "Generando..." : report ? "Actualizar" : "Generar"}
+    <section className={`p-5 ${card}`}>
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <h3 className="font-serif text-lg font-semibold text-ink">Reporte semanal</h3>
+        <button type="button" onClick={load} disabled={loading} className={btnPrimary}>
+          {loading ? "Generando…" : report ? "Actualizar" : "Generar"}
         </button>
       </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       {report && (
-        <div className="space-y-3 text-sm">
-          <p>{report.summary}</p>
-          <p className="text-slate-500">{TREND_LABELS[report.trend]}</p>
-          <div className="grid grid-cols-2 gap-2">
-            <p>
-              <span className="text-slate-500">Mejor día:</span> {report.best_day}
-            </p>
-            <p>
-              <span className="text-slate-500">Peor día:</span> {report.worst_day}
-            </p>
+        <div className="space-y-4 text-sm">
+          <p className="leading-relaxed text-ink">{report.summary}</p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="rounded-full bg-coolsoft px-2.5 py-1 text-[11px] font-semibold text-cool">
+              {TREND_LABELS[report.trend]}
+            </span>
+            <span className="rounded-full bg-warmsoft px-2.5 py-1 text-[11px] font-semibold text-warm">
+              🌟 Mejor: {report.best_day}
+            </span>
+            <span className="rounded-full bg-card2 px-2.5 py-1 text-[11px] font-semibold text-faint">
+              Peor: {report.worst_day}
+            </span>
           </div>
 
           {report.patterns_detected.length > 0 && (
             <div>
-              <p className="font-medium">Patrones detectados</p>
-              <ul className="mt-1 list-inside list-disc space-y-1">
+              <p className="mb-1.5 font-semibold text-ink">Patrones detectados</p>
+              <ul className="space-y-1.5">
                 {report.patterns_detected.map((p, i) => (
-                  <li key={i}>
-                    {p.pattern} <span className="text-xs text-slate-500">(confianza: {p.confidence})</span>
+                  <li key={i} className="text-muted">
+                    <span className="text-ink">{p.pattern}</span>{" "}
+                    <span className="text-[11px] text-faint">(confianza: {p.confidence})</span>
                   </li>
                 ))}
               </ul>
@@ -70,15 +75,22 @@ function WeeklyReportCard() {
 
           {report.recommendations.length > 0 && (
             <div>
-              <p className="font-medium">Recomendaciones</p>
-              <ul className="mt-1 space-y-2">
+              <p className="mb-1.5 font-semibold text-ink">Recomendaciones</p>
+              <ul className="space-y-2">
                 {report.recommendations.map((r, i) => (
-                  <li key={i} className="rounded-md bg-slate-100 p-2 dark:bg-slate-800">
-                    <p className="font-medium">
-                      [{r.priority}] {r.category}
-                    </p>
-                    <p>{r.recommendation}</p>
-                    <p className="text-xs text-slate-500">{r.evidence}</p>
+                  <li key={i} className="rounded-xl border border-hairsoft bg-card2 p-3">
+                    <div className="mb-1 flex items-center gap-2">
+                      <span
+                        className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase ${
+                          PRIORITY_STYLE[r.priority] ?? PRIORITY_STYLE.baja
+                        }`}
+                      >
+                        {r.priority}
+                      </span>
+                      <span className="text-[12px] font-semibold text-ink">{r.category}</span>
+                    </div>
+                    <p className="text-ink">{r.recommendation}</p>
+                    <p className="mt-1 text-[11px] text-faint">{r.evidence}</p>
                   </li>
                 ))}
               </ul>
@@ -109,33 +121,28 @@ function MonthlyReportCard() {
   }
 
   return (
-    <section className="mt-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-      <div className="mb-3 flex items-center justify-between">
-        <h3 className="font-semibold">Reporte mensual</h3>
-        <button
-          type="button"
-          onClick={load}
-          disabled={loading}
-          className="rounded-md bg-slate-900 px-3 py-1.5 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-        >
-          {loading ? "Generando..." : report ? "Actualizar" : "Generar"}
+    <section className={`mt-5 p-5 ${card}`}>
+      <div className="mb-3 flex items-center justify-between gap-4">
+        <h3 className="font-serif text-lg font-semibold text-ink">Reporte mensual</h3>
+        <button type="button" onClick={load} disabled={loading} className={btnPrimary}>
+          {loading ? "Generando…" : report ? "Actualizar" : "Generar"}
         </button>
       </div>
 
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
       {report && (
-        <div className="space-y-3 text-sm">
-          <p>{report.summary}</p>
-          <p className="text-slate-500">{report.comparison_with_previous_month}</p>
+        <div className="space-y-4 text-sm">
+          <p className="leading-relaxed text-ink">{report.summary}</p>
+          <p className="text-muted">{report.comparison_with_previous_month}</p>
 
           {report.top_factors.length > 0 && (
             <div>
-              <p className="font-medium">Factores más influyentes</p>
-              <ul className="mt-1 space-y-1">
+              <p className="mb-1.5 font-semibold text-ink">Factores más influyentes</p>
+              <ul className="space-y-1.5">
                 {report.top_factors.map((f, i) => (
-                  <li key={i}>
-                    {f.impact === "positive" ? "✅" : "⚠️"} <span className="font-medium">{f.factor}</span> —{" "}
+                  <li key={i} className="text-muted">
+                    {f.impact === "positive" ? "✅" : "⚠️"} <span className="font-medium text-ink">{f.factor}</span> —{" "}
                     {f.description}
                   </li>
                 ))}
@@ -145,8 +152,8 @@ function MonthlyReportCard() {
 
           {report.highlights.length > 0 && (
             <div>
-              <p className="font-medium">Logros destacados</p>
-              <ul className="mt-1 list-inside list-disc">
+              <p className="mb-1.5 font-semibold text-ink">Logros destacados</p>
+              <ul className="list-inside list-disc space-y-1 text-muted">
                 {report.highlights.map((h, i) => (
                   <li key={i}>{h}</li>
                 ))}
@@ -154,7 +161,9 @@ function MonthlyReportCard() {
             </div>
           )}
 
-          <p className="rounded-md bg-slate-100 p-3 dark:bg-slate-800">🎯 {report.suggested_goal}</p>
+          <div className="rounded-xl border border-hair border-l-[3px] border-l-warm bg-warmsoft px-4 py-3 text-ink">
+            🎯 {report.suggested_goal}
+          </div>
         </div>
       )}
     </section>
@@ -164,7 +173,7 @@ function MonthlyReportCard() {
 export function Reports() {
   return (
     <div className="mx-auto max-w-lg">
-      <h2 className="mb-4 text-2xl font-semibold">Reportes</h2>
+      <h2 className={`mb-5 ${pageTitle}`}>Reportes</h2>
       <WeeklyReportCard />
       <MonthlyReportCard />
     </div>

@@ -1,11 +1,11 @@
 import { Cell, Legend, Pie, PieChart, ResponsiveContainer, Tooltip } from "recharts";
+import { useChartColors } from "../../hooks/useChartColors";
+import { chartTooltip } from "./tooltip";
 
 interface Slice {
   mood: string;
   count: number;
 }
-
-const COLORS = ["#7c3aed", "#2563eb", "#0891b2", "#16a34a", "#ca8a04", "#dc2626", "#64748b"];
 
 const MOOD_LABELS: Record<string, string> = {
   rested: "Descansado",
@@ -18,28 +18,29 @@ const MOOD_LABELS: Record<string, string> = {
 };
 
 export function MoodDonutChart({ data }: { data: Slice[] }) {
+  const c = useChartColors();
+
   if (data.length === 0) {
-    return <p className="text-sm text-slate-500">Aún no hay suficientes registros completos.</p>;
+    return <p className="text-sm text-faint">Aún no hay suficientes registros completos.</p>;
   }
 
   return (
     <ResponsiveContainer width="100%" height={240}>
       <PieChart>
-        <Pie
-          data={data}
-          dataKey="count"
-          nameKey="mood"
-          innerRadius={50}
-          outerRadius={80}
-          paddingAngle={2}
-          label={(entry) => MOOD_LABELS[entry.mood] ?? entry.mood}
-        >
+        <Pie data={data} dataKey="count" nameKey="mood" innerRadius={50} outerRadius={80} paddingAngle={2}>
           {data.map((entry, i) => (
-            <Cell key={entry.mood} fill={COLORS[i % COLORS.length]} />
+            <Cell key={entry.mood} fill={c.categorical[i % c.categorical.length]} stroke="var(--card)" strokeWidth={2} />
           ))}
         </Pie>
-        <Tooltip formatter={(value: number, _name, item) => [value, MOOD_LABELS[item.payload.mood] ?? item.payload.mood]} />
-        <Legend formatter={(value: string) => MOOD_LABELS[value] ?? value} />
+        <Tooltip
+          {...chartTooltip}
+          formatter={(value: number, _name, item) => [value, MOOD_LABELS[item.payload.mood] ?? item.payload.mood]}
+        />
+        <Legend
+          formatter={(value: string) => (
+            <span style={{ color: "var(--fg2)", fontSize: 12 }}>{MOOD_LABELS[value] ?? value}</span>
+          )}
+        />
       </PieChart>
     </ResponsiveContainer>
   );

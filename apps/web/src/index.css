@@ -2,15 +2,111 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* ============================================================
+   DreamLog — sistema "Ocaso → Alba"
+   Periwinkle (--cool) = la noche / lo que controlas
+   Albaricoque (--warm) = la mañana / lo que obtienes
+   Dark es el modo principal; light es derivado.
+   ============================================================ */
+
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
+
+  /* ---- Light (derivado) ---- */
+  --bg: #f4f5fa;
+  --bg2: #ffffff;
+  --card: #ffffff;
+  --card2: #f1f3fa;
+  --border: #e3e6f1;
+  --border-soft: #edeff6;
+  --fg: #1b2038;
+  --fg2: #545b78;
+  --fg3: #8a90a8;
+  --cool: #5b67d8;
+  --cool-soft: #eef0fe;
+  --warm: #d98246;
+  --warm-soft: #fbeee2;
+  --primary: #5b67d8;
+  --primary-fg: #ffffff;
+  --success: #0e9f6e;
+  --danger: #e05555;
+  --heat0: #edeff6;
+  --heat1: #c7cef2;
+  --heat2: #8c9aee;
+  --heat3: #f0b27a;
+  --heat4: #ee9a4c;
+}
+
+.dark {
+  color-scheme: dark;
+
+  /* ---- Dark (principal) ---- */
+  --bg: #0e1220;
+  --bg2: #141a2c;
+  --card: #171e33;
+  --card2: #1e2740;
+  --border: #2a3350;
+  --border-soft: #212a44;
+  --fg: #e7eaf4;
+  --fg2: #a6aec8;
+  --fg3: #6e7794;
+  --cool: #8ca0ff;
+  --cool-soft: #1c2444;
+  --warm: #f7b27a;
+  --warm-soft: #33241a;
+  --primary: #6e7ce8;
+  --primary-fg: #f7f8ff;
+  --success: #5fd3a3;
+  --danger: #f08a8a;
+  --heat0: #1a2138;
+  --heat1: #39406b;
+  --heat2: #6e7ce8;
+  --heat3: #e89a5c;
+  --heat4: #f7c77a;
+}
+
+/* Registrar los tokens como colores de Tailwind. `inline` hace que las
+   utilidades referencien la variable por nombre, así el flip .dark se respeta. */
+@theme inline {
+  --color-canvas: var(--bg);
+  --color-panel: var(--bg2);
+  --color-card: var(--card);
+  --color-card2: var(--card2);
+  --color-hair: var(--border);
+  --color-hairsoft: var(--border-soft);
+  --color-ink: var(--fg);
+  --color-muted: var(--fg2);
+  --color-faint: var(--fg3);
+  --color-cool: var(--cool);
+  --color-coolsoft: var(--cool-soft);
+  --color-warm: var(--warm);
+  --color-warmsoft: var(--warm-soft);
+  --color-primary: var(--primary);
+  --color-primaryfg: var(--primary-fg);
+  --color-success: var(--success);
+  --color-danger: var(--danger);
+  --color-heat0: var(--heat0);
+  --color-heat1: var(--heat1);
+  --color-heat2: var(--heat2);
+  --color-heat3: var(--heat3);
+  --color-heat4: var(--heat4);
+
+  --font-serif: "Spectral", Georgia, serif;
 }
 
 body {
   margin: 0;
+  background: var(--bg);
+  color: var(--fg);
   font-family: system-ui, "Segoe UI", Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 #root {
   min-height: 100svh;
+}
+
+/* Cifras y títulos en serif tabular para que no "bailen" */
+.tnum {
+  font-variant-numeric: tabular-nums;
 }

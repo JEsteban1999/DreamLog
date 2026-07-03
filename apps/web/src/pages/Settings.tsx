@@ -7,6 +7,7 @@ import { apiClient, downloadFile } from "../lib/api-client";
 import { getExistingSubscription, isPushSupported, subscribeToPush, unsubscribeFromPush } from "../lib/push";
 import { DashboardCharts, getCompleteEntries } from "../components/dashboard/DashboardCharts";
 import { exportDashboardToPdf } from "../lib/pdf-export";
+import { btnPrimary, btnSecondary, card, input as inputClass, label as labelClass, pageTitle } from "../lib/ui";
 
 const profileFormSchema = z.object({
   name: z.string().max(100).optional(),
@@ -17,9 +18,12 @@ const profileFormSchema = z.object({
 type ProfileFormValues = z.infer<typeof profileFormSchema>;
 type NotificationFormValues = z.infer<typeof notificationSettingsSchema>;
 
-const inputClass =
-  "w-full rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900";
-const labelClass = "mb-1 block text-sm text-slate-500";
+const sectionCard = `mt-5 space-y-4 p-5 ${card}`;
+const sectionTitle = "font-serif text-lg font-semibold text-ink";
+const checkboxClass = "h-4 w-4 accent-[var(--primary)]";
+const toggleLabel = "flex items-center gap-2.5 text-sm text-ink";
+const smallInput =
+  "rounded-[10px] border border-hair bg-canvas px-2.5 py-1.5 text-sm text-ink focus:border-cool focus:outline-none";
 
 function ProfileForm() {
   const [savedMsg, setSavedMsg] = useState<string | null>(null);
@@ -34,9 +38,7 @@ function ProfileForm() {
   useEffect(() => {
     apiClient
       .get<UserProfile>("/user/profile")
-      .then((profile) =>
-        reset({ name: profile.name, timezone: profile.timezone, goal_hours: profile.goal_hours })
-      )
+      .then((profile) => reset({ name: profile.name, timezone: profile.timezone, goal_hours: profile.goal_hours }))
       .catch((e: Error) => setError(e.message));
   }, [reset]);
 
@@ -52,8 +54,8 @@ function ProfileForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-      <h3 className="font-semibold">Perfil</h3>
+    <form onSubmit={handleSubmit(onSubmit)} className={sectionCard}>
+      <h3 className={sectionTitle}>Perfil</h3>
 
       <div>
         <label className={labelClass} htmlFor="name">
@@ -85,15 +87,11 @@ function ProfileForm() {
         </div>
       </div>
 
-      {savedMsg && <p className="text-sm text-green-600">{savedMsg}</p>}
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {savedMsg && <p className="text-sm text-success">{savedMsg}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-      >
-        {isSubmitting ? "Guardando..." : "Guardar perfil"}
+      <button type="submit" disabled={isSubmitting} className={btnPrimary}>
+        {isSubmitting ? "Guardando…" : "Guardar perfil"}
       </button>
     </form>
   );
@@ -147,63 +145,45 @@ function NotificationsForm() {
   const sleepDebtAlert = watch("sleep_debt_alert");
 
   return (
-    <form
-      onSubmit={handleSubmit(onSubmit)}
-      className="mt-6 space-y-4 rounded-lg border border-slate-200 p-4 dark:border-slate-800"
-    >
-      <h3 className="font-semibold">Notificaciones</h3>
+    <form onSubmit={handleSubmit(onSubmit)} className={sectionCard}>
+      <h3 className={sectionTitle}>Notificaciones</h3>
 
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" {...register("bedtime_reminder")} />
-          Recordatorio nocturno
+      <div className="flex items-center justify-between gap-3">
+        <label className={toggleLabel}>
+          <input type="checkbox" className={checkboxClass} {...register("bedtime_reminder")} />🌙 Recordatorio nocturno
         </label>
-        {bedtimeReminder && <input type="time" className="w-32 rounded-md border border-slate-300 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900" {...register("bedtime_time")} />}
+        {bedtimeReminder && <input type="time" className={`w-32 ${smallInput}`} {...register("bedtime_time")} />}
       </div>
 
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" {...register("wakeup_reminder")} />
-          Recordatorio matutino
+      <div className="flex items-center justify-between gap-3">
+        <label className={toggleLabel}>
+          <input type="checkbox" className={checkboxClass} {...register("wakeup_reminder")} />☀️ Recordatorio matutino
         </label>
-        {wakeupReminder && <input type="time" className="w-32 rounded-md border border-slate-300 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900" {...register("wakeup_time")} />}
+        {wakeupReminder && <input type="time" className={`w-32 ${smallInput}`} {...register("wakeup_time")} />}
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" {...register("weekly_report")} />
-        Reporte semanal
+      <label className={toggleLabel}>
+        <input type="checkbox" className={checkboxClass} {...register("weekly_report")} />📊 Reporte semanal
       </label>
 
-      <div className="flex items-center justify-between">
-        <label className="flex items-center gap-2 text-sm">
-          <input type="checkbox" {...register("sleep_debt_alert")} />
-          Alerta de deuda de sueño
+      <div className="flex items-center justify-between gap-3">
+        <label className={toggleLabel}>
+          <input type="checkbox" className={checkboxClass} {...register("sleep_debt_alert")} />⚠️ Alerta de deuda de sueño
         </label>
         {sleepDebtAlert && (
-          <input
-            type="number"
-            min={0}
-            step={0.5}
-            className="w-24 rounded-md border border-slate-300 px-2 py-1 text-sm dark:border-slate-700 dark:bg-slate-900"
-            {...register("sleep_debt_threshold")}
-          />
+          <input type="number" min={0} step={0.5} className={`w-24 ${smallInput}`} {...register("sleep_debt_threshold")} />
         )}
       </div>
 
-      <label className="flex items-center gap-2 text-sm">
-        <input type="checkbox" {...register("streak_reminder")} />
-        Recordatorio de racha
+      <label className={toggleLabel}>
+        <input type="checkbox" className={checkboxClass} {...register("streak_reminder")} />🔥 Recordatorio de racha
       </label>
 
-      {savedMsg && <p className="text-sm text-green-600">{savedMsg}</p>}
-      {error && <p className="text-sm text-red-500">{error}</p>}
+      {savedMsg && <p className="text-sm text-success">{savedMsg}</p>}
+      {error && <p className="text-sm text-danger">{error}</p>}
 
-      <button
-        type="submit"
-        disabled={isSubmitting}
-        className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-      >
-        {isSubmitting ? "Guardando..." : "Guardar notificaciones"}
+      <button type="submit" disabled={isSubmitting} className={btnPrimary}>
+        {isSubmitting ? "Guardando…" : "Guardar notificaciones"}
       </button>
     </form>
   );
@@ -249,41 +229,34 @@ function PushToggle() {
   }
 
   return (
-    <div className="mt-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-      <h3 className="mb-2 font-semibold">Notificaciones push en este dispositivo</h3>
-      <p className="mb-3 text-sm text-slate-500">
+    <div className={`mt-5 p-5 ${card}`}>
+      <h3 className={`mb-2 ${sectionTitle}`}>Push en este dispositivo</h3>
+      <p className="mb-3 text-sm text-muted">
         Los horarios de arriba solo se disparan si activas las notificaciones push en este navegador.
       </p>
 
-      {status === "unsupported" && (
-        <p className="text-sm text-red-500">Este navegador no soporta notificaciones push.</p>
-      )}
-      {status === "checking" && <p className="text-sm text-slate-500">Verificando...</p>}
+      {status === "unsupported" && <p className="text-sm text-danger">Este navegador no soporta notificaciones push.</p>}
+      {status === "checking" && <p className="text-sm text-faint">Verificando…</p>}
       {status === "subscribed" && (
         <div className="flex items-center gap-3">
-          <span className="text-sm text-green-600">✓ Activas en este dispositivo</span>
+          <span className="text-sm font-medium text-success">✓ Activas en este dispositivo</span>
           <button
             type="button"
             onClick={handleDisable}
             disabled={busy}
-            className="text-sm text-red-500 hover:underline disabled:opacity-50"
+            className="text-sm text-faint hover:text-danger disabled:opacity-50"
           >
             Desactivar
           </button>
         </div>
       )}
       {status === "unsubscribed" && (
-        <button
-          type="button"
-          onClick={handleEnable}
-          disabled={busy}
-          className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-        >
-          {busy ? "Activando..." : "Activar notificaciones"}
+        <button type="button" onClick={handleEnable} disabled={busy} className={btnPrimary}>
+          {busy ? "Activando…" : "Activar notificaciones"}
         </button>
       )}
 
-      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
     </div>
   );
 }
@@ -341,36 +314,21 @@ function ExportSection() {
   }, [pdfData]);
 
   return (
-    <div className="mt-6 rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-      <h3 className="mb-2 font-semibold">Exportar datos</h3>
-      <p className="mb-3 text-sm text-slate-500">Descarga todo tu historial de sueño.</p>
+    <div className={`mt-5 p-5 ${card}`}>
+      <h3 className={`mb-2 ${sectionTitle}`}>Exportar datos</h3>
+      <p className="mb-3 text-sm text-muted">Descarga todo tu historial de sueño.</p>
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => handleExport("csv")}
-          disabled={busy !== null}
-          className="rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
-        >
-          {busy === "csv" ? "Descargando..." : "Descargar CSV"}
+        <button type="button" onClick={() => handleExport("csv")} disabled={busy !== null} className={btnPrimary}>
+          {busy === "csv" ? "Descargando…" : "CSV"}
         </button>
-        <button
-          type="button"
-          onClick={() => handleExport("json")}
-          disabled={busy !== null}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium disabled:opacity-50 dark:border-slate-700"
-        >
-          {busy === "json" ? "Descargando..." : "Descargar JSON"}
+        <button type="button" onClick={() => handleExport("json")} disabled={busy !== null} className={btnSecondary}>
+          {busy === "json" ? "Descargando…" : "JSON"}
         </button>
-        <button
-          type="button"
-          onClick={handleExportPdf}
-          disabled={busy !== null}
-          className="rounded-md border border-slate-300 px-3 py-2 text-sm font-medium disabled:opacity-50 dark:border-slate-700"
-        >
-          {busy === "pdf" ? "Generando PDF..." : "Descargar PDF"}
+        <button type="button" onClick={handleExportPdf} disabled={busy !== null} className={btnSecondary}>
+          {busy === "pdf" ? "Generando PDF…" : "PDF"}
         </button>
       </div>
-      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
 
       {pdfData && (
         <div className="fixed -left-[9999px] top-0 w-[800px]">
@@ -384,7 +342,7 @@ function ExportSection() {
 export function Settings() {
   return (
     <div className="mx-auto max-w-lg">
-      <h2 className="mb-4 text-2xl font-semibold">Ajustes</h2>
+      <h2 className={pageTitle}>Ajustes</h2>
       <ProfileForm />
       <NotificationsForm />
       <PushToggle />

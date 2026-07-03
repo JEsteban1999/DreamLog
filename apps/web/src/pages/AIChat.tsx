@@ -2,6 +2,7 @@ import { useState } from "react";
 import ReactMarkdown from "react-markdown";
 import type { ChatMessage } from "@dreamlog/shared";
 import { apiClient } from "../lib/api-client";
+import { pageTitle } from "../lib/ui";
 
 const markdownComponents = {
   p: (props: React.ComponentProps<"p">) => <p className="mb-2 last:mb-0" {...props} />,
@@ -41,24 +42,22 @@ export function AIChat() {
   }
 
   return (
-    <div className="mx-auto flex h-[calc(100vh-8rem)] max-w-2xl flex-col">
-      <h2 className="mb-1 text-2xl font-semibold">Chat con tus datos de sueño</h2>
-      <p className="mb-4 text-xs text-slate-500">
-        Pregúntale a Claude sobre tu historial. Ej: "¿En qué días duermo mejor?" · Límite de {MESSAGE_LIMIT}{" "}
-        mensajes por sesión.
+    <div className="mx-auto flex h-[calc(100svh-11rem)] max-w-2xl flex-col md:h-[calc(100svh-7rem)]">
+      <h2 className={`mb-1 ${pageTitle}`}>Chat con tus datos</h2>
+      <p className="mb-4 text-xs text-faint">
+        Pregúntale a Claude sobre tu historial. Ej: "¿En qué días duermo mejor?" · Límite de {MESSAGE_LIMIT} mensajes
+        por sesión.
       </p>
 
-      <div className="flex-1 space-y-3 overflow-y-auto rounded-lg border border-slate-200 p-4 dark:border-slate-800">
-        {messages.length === 0 && (
-          <p className="text-sm text-slate-500">Escribe una pregunta para empezar.</p>
-        )}
+      <div className="flex-1 space-y-3 overflow-y-auto rounded-2xl border border-hair bg-card p-4">
+        {messages.length === 0 && <p className="text-sm text-faint">Escribe una pregunta para empezar.</p>}
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`max-w-[85%] rounded-lg px-3 py-2 text-sm ${
+            className={`max-w-[85%] rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed ${
               m.role === "user"
-                ? "ml-auto bg-slate-900 text-white dark:bg-slate-100 dark:text-slate-900"
-                : "bg-slate-100 dark:bg-slate-800"
+                ? "ml-auto bg-primary text-primaryfg"
+                : "border border-hairsoft bg-card2 text-ink"
             }`}
           >
             {m.role === "assistant" ? (
@@ -68,12 +67,17 @@ export function AIChat() {
             )}
           </div>
         ))}
-        {sending && <p className="text-sm text-slate-500">Claude está pensando...</p>}
+        {sending && (
+          <div className="flex items-center gap-2 text-sm text-faint">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-cool" />
+            Claude está pensando…
+          </div>
+        )}
       </div>
 
-      {error && <p className="mt-2 text-sm text-red-500">{error}</p>}
+      {error && <p className="mt-2 text-sm text-danger">{error}</p>}
       {limitReached && (
-        <p className="mt-2 text-sm text-slate-500">
+        <p className="mt-2 text-sm text-faint">
           Llegaste al límite de mensajes de esta sesión. Recarga la página para empezar una nueva.
         </p>
       )}
@@ -84,13 +88,13 @@ export function AIChat() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           disabled={sending || limitReached}
-          placeholder="Escribe tu pregunta..."
-          className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm dark:border-slate-700 dark:bg-slate-900"
+          placeholder="Escribe tu pregunta…"
+          className="flex-1 rounded-[11px] border border-hair bg-canvas px-3.5 py-2.5 text-sm text-ink placeholder:text-faint focus:border-cool focus:outline-none focus:ring-2 focus:ring-cool/30"
         />
         <button
           type="submit"
           disabled={sending || limitReached || !input.trim()}
-          className="rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50 dark:bg-slate-100 dark:text-slate-900"
+          className="rounded-[11px] bg-primary px-4 py-2.5 text-sm font-semibold text-primaryfg transition hover:opacity-90 disabled:opacity-50"
         >
           Enviar
         </button>
