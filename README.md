@@ -2,7 +2,7 @@
 
 Diario de sueño inteligente. La visión completa del producto está en [README_SleepDiary.md](./README_SleepDiary.md).
 
-**Estado:** Fase 1, 2 y 3 del roadmap original completas y desplegadas. Web-only (mobile con React Native + Expo queda como posible Fase 4).
+**Estado:** Fase 1, 2 y 3 del roadmap original completas y desplegadas, con un rediseño visual completo aplicado (sistema "Ocaso → Alba"). Web-only (mobile con React Native + Expo queda como posible Fase 4).
 
 ## Producción
 
@@ -18,7 +18,17 @@ Diario de sueño inteligente. La visión completa del producto está en [README_
 - **IA (Claude Sonnet 5):** predicción de calidad al guardar el registro nocturno, reporte semanal y mensual con patrones/recomendaciones, chat conversacional sobre el historial.
 - **Notificaciones push:** recordatorio nocturno/matutino, alerta de deuda de sueño, racha en riesgo.
 - **Exportación:** CSV, JSON y PDF (gráficas del dashboard + tabla de historial) desde Ajustes.
-- **Dark mode** con toggle persistente.
+- **Dark mode** (modo principal) con toggle persistente, y navegación mobile con bottom tab bar.
+
+## Diseño — sistema "Ocaso → Alba"
+
+Rediseño visual completo, definido en Claude Design e implementado a mano (frontend only, sin cambios de backend ni datos).
+
+- **Concepto:** periwinkle (`--cool`) = la noche / lo que controlas · albaricoque (`--warm`) = la mañana / lo que obtienes. Dark mode es el modo principal (la app se usa de noche).
+- **Tokens:** variables CSS semánticas en `apps/web/src/index.css` para light y dark, mapeadas a utilidades de Tailwind v4 vía `@theme inline` (así el flip de tema se respeta en runtime). Nombres: `canvas`, `panel`, `card`, `ink`/`muted`/`faint`, `cool`/`warm`, `primary`, `success`/`danger`, `heat0–4`.
+- **Tipografía:** Spectral (serif) para títulos y cifras; system-ui para cuerpo e interfaz.
+- **Reutilizables:** `components/Logo.tsx` (marca gradiente), `lib/ui.ts` (clases compartidas de card/input/botón), `hooks/useChartColors.ts` (colores de Recharts reactivos al tema).
+- **Dashboard** agrupado en "Tu descanso" (resultados) y "Qué lo afecta" (factores).
 
 ## Stack
 
