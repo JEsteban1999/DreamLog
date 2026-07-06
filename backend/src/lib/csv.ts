@@ -1,6 +1,12 @@
 function escapeCsvValue(value: unknown): string {
   if (value === null || value === undefined) return "";
-  const str = value instanceof Date ? value.toISOString() : String(value);
+  let str = value instanceof Date ? value.toISOString() : String(value);
+  // Anti CSV/formula injection: una celda que empieza con = + - @ (o tab/CR)
+  // puede ejecutarse como fórmula al abrirla en Excel/Sheets. Se neutraliza
+  // anteponiendo un apóstrofo para que se trate como texto.
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`;
+  }
   if (/[",\n]/.test(str)) {
     return `"${str.replace(/"/g, '""')}"`;
   }
