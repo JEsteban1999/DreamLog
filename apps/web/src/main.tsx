@@ -12,3 +12,14 @@ createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </StrictMode>,
 )
+
+// Registrar el service worker en producción (PWA instalable + offline + push).
+// En dev se omite para no interferir con el HMR de Vite; ahí el SW se registra
+// on-demand al activar las notificaciones push.
+if (import.meta.env.PROD && 'serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {
+      // Si falla el registro, la app sigue funcionando sin PWA/offline.
+    })
+  })
+}

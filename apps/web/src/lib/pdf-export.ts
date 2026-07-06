@@ -1,11 +1,19 @@
-import { jsPDF } from "jspdf";
-import autoTable from "jspdf-autotable";
-import { toCanvas } from "html-to-image";
+import type { jsPDF as JsPDF } from "jspdf";
 import type { SleepEntry } from "@dreamlog/shared";
 
-async function addChartsPages(pdf: jsPDF, chartsElement: HTMLElement, firstPageStartY: number) {
+// Las libs pesadas (jspdf, jspdf-autotable, html-to-image) se cargan de forma
+// diferida dentro de exportDashboardToPdf, así no entran al bundle inicial.
+type ToCanvasFn = typeof import("html-to-image").toCanvas;
+type AutoTableFn = typeof import("jspdf-autotable").default;
+
+async function addChartsPages(
+  pdf: JsPDF,
+  chartsElement: HTMLElement,
+  firstPageStartY: number,
+  toCanvas: ToCanvasFn
+) {
   const canvas = await toCanvas(chartsElement, {
-    backgroundColor: document.documentElement.classList.contains("dark") ? "#0f172a" : "#ffffff",
+    backgroundColor: document.documentElement.classList.contains("dark") ? "#0e1220" : "#ffffff",
     pixelRatio: 2,
   });
 
@@ -29,7 +37,7 @@ async function addChartsPages(pdf: jsPDF, chartsElement: HTMLElement, firstPageS
   }
 }
 
-function addEntriesTablePage(pdf: jsPDF, entries: SleepEntry[]) {
+function addEntriesTablePage(pdf: JsPDF, entries: SleepEntry[], autoTable: AutoTableFn) {
   pdf.addPage("a4", "l");
   pdf.setFontSize(14);
   pdf.text("Historial de sueño", 14, 15);
@@ -51,21 +59,27 @@ function addEntriesTablePage(pdf: jsPDF, entries: SleepEntry[]) {
       e.awakenings ?? "--",
     ]),
     styles: { fontSize: 8 },
-    headStyles: { fillColor: [124, 58, 237] },
+    headStyles: { fillColor: [110, 124, 232] },
   });
 }
 
 export async function exportDashboardToPdf(chartsElement: HTMLElement, entries: SleepEntry[]) {
+  const [{ jsPDF }, { default: autoTable }, { toCanvas }] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+    import("html-to-image"),
+  ]);
+
   const pdf = new jsPDF("p", "mm", "a4");
   pdf.setFontSize(16);
-  pdf.text("🌙 DreamLog — Reporte de sueño", 10, 15);
+  pdf.text("DreamLog — Reporte de sueño", 10, 15);
   pdf.setFontSize(10);
   pdf.text(`Generado: ${new Date().toLocaleString()}`, 10, 22);
 
-  await addChartsPages(pdf, chartsElement, 28);
+  await addChartsPages(pdf, chartsElement, 28, toCanvas);
 
   if (entries.length > 0) {
-    addEntriesTablePage(pdf, entries);
+    addEntriesTablePage(pdf, entries, autoTable);
   }
 
   pdf.save(`dreamlog-reporte-${new Date().toISOString().slice(0, 10)}.pdf`);

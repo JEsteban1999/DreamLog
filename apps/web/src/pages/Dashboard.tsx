@@ -10,6 +10,7 @@ interface SummaryStats {
   entries_count: number;
   avg_quality: number | null;
   avg_duration_hours: number | null;
+  current_streak: number;
 }
 
 interface Kpi {
@@ -78,6 +79,13 @@ export function Dashboard() {
           sub: "esta semana",
           dot: "--cool",
         },
+        {
+          label: "Racha",
+          value: String(stats.current_streak),
+          unit: stats.current_streak === 1 ? "noche" : "noches",
+          sub: stats.current_streak > 0 ? "🎯 sigue así" : "empieza hoy",
+          dot: "--cool",
+        },
       ]
     : [];
 
@@ -100,8 +108,8 @@ export function Dashboard() {
       {error && <p className="mb-4 text-sm text-danger">Error al cargar datos: {error}</p>}
 
       {/* KPIs */}
-      <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4">
-        {(kpis.length ? kpis : [null, null, null]).map((kpi, i) => (
+      <div className="mb-8 grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4">
+        {(kpis.length ? kpis : [null, null, null, null]).map((kpi, i) => (
           <div key={i} className="rounded-2xl border border-hair bg-card p-4">
             {kpi ? (
               <>

@@ -113,13 +113,42 @@ export async function softDeleteEntry(entryId: string, userId: string) {
   });
 }
 
+// Racha de noches consecutivas con registro, terminando en la noche más
+// reciente. Si la noche de hoy aún no se registra, se cuenta desde ayer (no
+// romper la racha solo porque todavía no cierras la noche en curso).
+export async function getCurrentStreak(userId: string): Promise<number> {
+  const entries = await prisma.sleepEntry.findMany({
+    where: { user_id: userId, deleted_at: null },
+    orderBy: { sleep_date: "desc" },
+    take: 400,
+    select: { sleep_date: true },
+  });
+
+  const dates = new Set(entries.map((e) => e.sleep_date.toISOString().slice(0, 10)));
+  if (dates.size === 0) return 0;
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const cursor = new Date(todayStr);
+  if (!dates.has(todayStr)) cursor.setDate(cursor.getDate() - 1);
+
+  let streak = 0;
+  while (dates.has(cursor.toISOString().slice(0, 10))) {
+    streak++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+  return streak;
+}
+
 export async function getSummaryStats(userId: string, days = 7) {
   const from = new Date();
   from.setDate(from.getDate() - days);
 
-  const entries = await prisma.sleepEntry.findMany({
-    where: { user_id: userId, deleted_at: null, is_complete: true, sleep_date: { gte: from } },
-  });
+  const [entries, currentStreak] = await Promise.all([
+    prisma.sleepEntry.findMany({
+      where: { user_id: userId, deleted_at: null, is_complete: true, sleep_date: { gte: from } },
+    }),
+    getCurrentStreak(userId),
+  ]);
 
   const avgQuality = entries.length
     ? entries.reduce((sum, e) => sum + (e.sleep_quality ?? 0), 0) / entries.length
@@ -133,5 +162,6 @@ export async function getSummaryStats(userId: string, days = 7) {
     entries_count: entries.length,
     avg_quality: avgQuality,
     avg_duration_hours: avgDuration,
+    current_streak: currentStreak,
   };
 }
